@@ -11,14 +11,12 @@ import System.Directory
 
 import Data.Monoid
 import Data.List (stripPrefix)
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust)
 import Data.String (fromString)
 
-import Data.Text.Lazy (Text)
-import qualified Data.Text.Lazy as Text
-import qualified Data.Text.Lazy.IO as Text
-import Data.Map (Map)
-import qualified Data.Map as Map
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text as TS
+import Text.Hastache
 
 import Paths_kansas_lava_shake
 
@@ -38,7 +36,7 @@ xilinxRules XilinxConfig{..} mod xaws = do
         textTemplate [("MAIN", fromString mod), ("TOP", fromString mod)]
 
     "*.xise" *>
-        textTemplate [("FILES", xiseFiles)]
+        listTemplate "components" xiseFiles
 
     "*.prj" *> \target -> do
         let vhdlWork baseName = mconcat ["vhdl work \"", baseName <.> "vhdl", "\""]
@@ -165,45 +163,50 @@ xilinxRules XilinxConfig{..} mod xaws = do
 
     vhdls = [mod, "lava-prelude"]
 
-    xiseFiles = Text.unlines $
-        [ "<file xil_pn:name=\"" <> fileName <> "\" xil_pn:type=\"FILE_VHDL\">\n" <>
-          "  <association xil_pn:name=\"BehavioralSimulation\"/>\n" <>
-          "  <association xil_pn:name=\"Implementation\"/>\n" <>
-          "</file>"
-        | vhdl <- vhdls
-        , let fileName = fromString $ vhdl <.> "vhdl"
-        ] ++
-        [ "<file xil_pn:name=\"" <> fromString (mod <.> "ucf") <> "\" xil_pn:type=\"FILE_UCF\">\n" <>
-          "  <association xil_pn:name=\"Implementation\"/>\n" <>
-          "</file>"
-        ] ++
-        [ "<file xil_pn:name=\"" <> fileName <> "\" xil_pn:type=\"FILE_XAW\">\n" <>
-          "  <association xil_pn:name=\"BehavioralSimulation\"/>\n" <>
-          "  <association xil_pn:name=\"Implementation\"/>\n" <>
-          "</file>"
-        | xaw <- xaws
-        , let fileName = fromString $ ".." </> "xaw" </> xaw <.> "xaw"
-        ]
+    xiseFiles = map (return .) $ ucf : map vhdl vhdls ++ map xaw xaws
+      where
+        vhdl componentName = \key -> case key of
+            "type" -> MuVariable ("FILE_VHDL" :: String)
+            "fileName" -> MuVariable $ componentName <.> "vhdl"
+            "behavior" -> MuBool True
+        ucf = \key -> case key of
+            "type" -> MuVariable ("FILE_UCF" :: String)
+            "fileName" -> MuVariable $ mod <.> "ucf"
+            "behavior" -> MuBool False
+        xaw componentName = \key -> case key of
+            "type" -> MuVariable ("FILE_XAW" :: String)
+            "fileName" -> MuVariable $ ".." </> "xaw" </> componentName <.> "xaw"
+            "behavior" -> MuBool True
 
-textTemplate :: [(Text, Text)] -> FilePath -> Action ()
-textTemplate replacements target = do
-    let ext = drop 1 . takeExtension $ target
-        templateName = ext <.> "in"
-    t <- liftIO $ Text.readFile =<< getDataFileName ("ise.template" </> templateName)
-    writeFileChanged target $ Text.unpack . substituteTemplate replacements $ t
+hastache :: MuContext IO -> FilePath -> Action ()
+hastache ctxt target = do
+    templateFile <- liftIO $ getDataFileName ("ise.template" </> templateName)
+    t <- liftIO $ hastacheFile hastacheConfig templateFile ctxt
+    writeFileChanged target $ TL.unpack t
+  where
+    hastacheConfig = MuConfig{ muEscapeFunc = emptyEscape
+                             , muTemplateFileDir = Nothing
+                             , muTemplateFileExt = Just "mustache"
+                             , muTemplateRead = const $ return Nothing
+                             }
+
+    ext = drop 1 . takeExtension $ target
+    templateName = ext <.> "mustache"
+
+listTemplate :: TS.Text -> [MuContext IO] -> FilePath -> Action ()
+listTemplate key0 entities = hastache ctxt
+  where
+    ctxt key = return $ if key == key0 then MuList entities else MuNothing
+
+textTemplate :: [(TS.Text, TL.Text)] -> FilePath -> Action ()
+textTemplate replacements = hastache ctxt
+  where
+    ctxt key = return $ case lookup key replacements of
+        Just value -> MuVariable value
+        Nothing -> MuNothing
 
 mapFileName :: (String -> String) -> FilePath -> FilePath
 mapFileName f fp = replaceFileName fp (f (takeFileName fp))
 
 stripSuffix :: (Eq a) => [a] -> [a] -> Maybe [a]
 stripSuffix suffix = fmap reverse . stripPrefix (reverse suffix) . reverse
-
-substituteTemplate :: [(Text, Text)] -> Text -> Text
-substituteTemplate replacements = mconcat . go . Text.splitOn "@@"
-  where
-    subs :: Map Text Text
-    subs = Map.fromList replacements
-
-    go :: [Text] -> [Text]
-    go (pre:key:ts) = pre : fromMaybe key (Map.lookup key subs) : go ts
-    go ts = ts

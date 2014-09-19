@@ -6,7 +6,12 @@
   <version xil_pn:ise_version="14.2" xil_pn:schema_version="2"/>
 
   <files>
-    @@FILES@@
+{{#components}}
+    <file xil_pn:name="{{fileName}}" xil_pn:type="{{type}}">
+      <association xil_pn:name="Implementation"/>
+      {{#behavior}}<association xil_pn:name="BehavioralSimulation"/>{{/behavior}}
+    </file>
+{{/components}}
   </files>
 
   <properties>

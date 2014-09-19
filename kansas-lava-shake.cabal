@@ -12,7 +12,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
 data-files:
-        ise.template/*.in
+        ise.template/*.mustache
 
 Library
   hs-source-dirs:      src
@@ -26,7 +26,8 @@ Library
         directory,
         shake,
         containers,
-        text
+        text,
+        hastache
   default-language:    Haskell2010
   other-extensions:    RecordWildCards
   Ghc-Options:         -Werror -fwarn-unused-imports -fwarn-unused-matches
