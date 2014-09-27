@@ -105,7 +105,6 @@ xilinxRules XilinxConfig{..} mod xaws = do
           , target -<.> "map"
           ]
         xilinx "map" [ "-p", xilinxPlatform
-                     , "-cm", "area"
                      , "-ir", "off"
                      , "-pr", "off"
                      , "-c", "100"
@@ -132,9 +131,10 @@ xilinxRules XilinxConfig{..} mod xaws = do
               , target -<.> "unroutes"
               , target -<.> "ptwx"
               ]
+
             xilinx "par" [ "-w"
                          , "-ol", "high"
-                         , "-t", "1"
+                         , "-mt", "off"
                          , mapFileName (<> "_map") target -<.> "ncd"
                          , target -<.> "ncd"
                          , target -<.> "pcf"
