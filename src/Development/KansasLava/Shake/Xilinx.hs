@@ -108,6 +108,7 @@ xilinxRules XilinxConfig{..} mod xaws = do
                      , "-ir", "off"
                      , "-pr", "off"
                      , "-c", "100"
+                     , "-w"
                      , "-o", mapFileName (<> "_map") target -<.> "ncd"
                      , target -<.> "ngd"
                      , target -<.> "pcf"
