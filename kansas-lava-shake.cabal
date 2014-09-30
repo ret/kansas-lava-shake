@@ -1,5 +1,5 @@
 name:                kansas-lava-shake
-version:             0.1.0
+version:             0.1.1
 synopsis:            Shake rules for building Kansas Lava projects
 -- description:
 license:             BSD3
@@ -17,11 +17,13 @@ data-files:
 Library
   hs-source-dirs:      src
   Exposed-modules:
+        Development.KansasLava.Shake
         Development.KansasLava.Shake.Xilinx
   Other-modules:
         Paths_kansas_lava_shake
   build-depends:
         base >=4.7 && < 5,
+        kansas-lava >=0.2.4 && < 0.2.5,
         filepath,
         directory,
         shake,
