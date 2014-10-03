@@ -33,7 +33,10 @@ xilinxRules XilinxConfig{..} mod xaws = do
         textTemplate []
 
     "*.xst" *>
-        textTemplate [("MAIN", fromString mod), ("TOP", fromString mod)]
+        textTemplate [ ("MAIN", fromString mod)
+                     , ("TOP", fromString mod)
+                     , ("PLATFORM", fromString xilinxPlatform)
+                     ]
 
     "*.xise" *>
         listTemplate "components" xiseFiles
