@@ -184,6 +184,7 @@ xilinxRules XilinxConfig{..} mod xaws = do
 
 hastache :: MuContext IO -> FilePath -> Action ()
 hastache ctxt target = do
+    alwaysRerun
     templateFile <- liftIO $ getDataFileName ("ise.template" </> templateName)
     t <- liftIO $ hastacheFile hastacheConfig templateFile ctxt
     writeFileChanged target $ TL.unpack t
