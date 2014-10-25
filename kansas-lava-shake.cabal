@@ -26,6 +26,7 @@ Library
         kansas-lava >=0.2.4 && < 0.2.5,
         filepath,
         directory,
+        temporary,
         shake,
         containers,
         text,
