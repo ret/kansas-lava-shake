@@ -53,13 +53,11 @@ xilinxRules XilinxConfig{..} mod xaws = do
         xilinx "xaw2vhdl" [xaw, "-st", "XST", target]
     xawsrc "*.ucf" *> \target -> need [target -<.> "vhdl"]
 
-    "xst/projnav.tmp" *> liftIO . createDirectoryIfMissing True
-
     "*.ngc" *> \target -> do
+        liftIO $ createDirectoryIfMissing True "xst/projnav.tmp"
         need $
           (target -<.> "prj"):
           (target -<.> "xst"):
-          ("xst" </> "projnav.tmp"):
           [gensrc $ f <.> "vhdl" | f <- vhdls] ++
           [xawsrc $ f <.> "vhdl" | f <- xaws]
 
@@ -76,10 +74,10 @@ xilinxRules XilinxConfig{..} mod xaws = do
                      ]
 
     "*.ngd" *> \target -> do
+        liftIO $ createDirectoryIfMissing True "xst/projnav.tmp"
         let ucf = gensrc $ target -<.> "ucf"
         need [ target -<.> "ngc"
              , ucf
-             , "xst/projnav.tmp"
              ]
         removeFilesAfter "."
           [ target -<.> "bld"
@@ -96,9 +94,9 @@ xilinxRules XilinxConfig{..} mod xaws = do
                           ]
 
     "*.pcf" *> \target -> do
+        liftIO $ createDirectoryIfMissing True "xst/projnav.tmp"
         need [ target -<.> "ngc"
              , target -<.> "ngd"
-             , "xst/projnav.tmp"
              ]
         removeFilesAfter "."
           [ "*_summary.xml"
@@ -121,9 +119,8 @@ xilinxRules XilinxConfig{..} mod xaws = do
         "*_map.ncd" *> \target -> need [mapFileName (fromJust . stripSuffix "_map") target -<.> "pcf"]
 
         "*.ncd" *> \target -> do
-            need [ "xst" </> "projnav.tmp"
-                 , target -<.> "pcf"
-                 ]
+            liftIO $ createDirectoryIfMissing True "xst/projnav.tmp"
+            need [target -<.> "pcf"]
             removeFilesAfter "."
               [ "*_pad.txt"
               , "*_pad.xrpt"
@@ -145,8 +142,8 @@ xilinxRules XilinxConfig{..} mod xaws = do
                          ]
 
     "*.bit" *> \target -> do
-        need [ "xst/projnav.tmp"
-             , target -<.> "ut"
+        liftIO $ createDirectoryIfMissing True "xst/projnav.tmp"
+        need [ target -<.> "ut"
              , target -<.> "ncd"
              ]
         removeFilesAfter "."
