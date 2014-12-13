@@ -27,7 +27,7 @@ Library
         filepath,
         directory,
         temporary,
-        shake,
+        shake >= 0.14,
         containers,
         text,
         hastache
