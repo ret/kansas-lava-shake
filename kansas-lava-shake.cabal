@@ -5,7 +5,7 @@ description:         Shake rules for building Kansas Lava projects. Currently su
                      Xilinx FPGA tooling only.
 license:             BSD3
 license-file:        LICENSE
-copyright:           (C) 2014 Gergo Erdi
+copyright:           (C) 2014 Gergő Érdi
 author:              Gergo Erdi
 maintainer:          Gergo Erdi <gergo@erdi.hu>
 category:            Development
