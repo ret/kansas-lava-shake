@@ -161,6 +161,7 @@ proc findRtfPath { relativePath } {
 
 proc add_source_files {} {
 
+   global myProject
    global myScript
 
    if { ! [ open_project ] } {
@@ -187,7 +188,7 @@ proc add_source_files {} {
    {{/ipcores}}
 
    # Set the Top Module as well...
-   project set top "rtl" "PET"
+   project set top "rtl" $myProject
 
    puts "$myScript: project sources reloaded."
 

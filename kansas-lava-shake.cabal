@@ -1,5 +1,5 @@
 name:                kansas-lava-shake
-version:             0.2.0
+version:             0.2.0.1
 synopsis:            Shake rules for building Kansas Lava projects
 description:         Shake rules for building Kansas Lava projects. Currently supports the
                      Xilinx FPGA tooling only.
@@ -40,4 +40,4 @@ source-repository head
 source-repository this
   type:     git
   location: git://github.com/gergoerdi/kansas-lava-shake
-  tag:      0.2.0
+  tag:      0.2.0.1
