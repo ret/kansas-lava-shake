@@ -5,17 +5,17 @@ module Development.KansasLava.Shake
 import Development.Shake
 import Development.Shake.FilePath
 import Language.KansasLava.VHDL (writeVhdlPrelude)
+import Control.Monad
 
-lavaRules :: FilePath -> String -> String -> Rules ()
-lavaRules modName vhdl ucf = do
-    "gensrc" </> modName <.> "vhdl" *> \target -> do
-        alwaysRerun
-        writeFileChanged target vhdl
-    "gensrc" </> modName <.> "ucf" *> \target -> do
-        alwaysRerun
-        writeFileChanged target ucf
-    "gensrc/lava-prelude.vhdl" *> \target -> do
+lavaRules :: FilePath -> [(FilePath, String)] -> Rules ()
+lavaRules outDir genVHDLs = do
+    outDir </> "gensrc/lava-prelude.vhdl" %> \out -> do
         alwaysRerun
         withTempFile $ \tempFile -> do
             liftIO $ writeVhdlPrelude tempFile
-            copyFileChanged tempFile target
+            copyFileChanged tempFile out
+
+    forM_ genVHDLs $ \(modName, vhdl) -> do
+        outDir </> "gensrc" </> modName <.> "vhdl" %> \out -> do
+            alwaysRerun
+            writeFileChanged out vhdl
