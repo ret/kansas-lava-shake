@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 module Development.KansasLava.Shake.Xilinx
-       ( XilinxConfig(..)
+       ( XilinxConfig(..), XilinxTarget(..)
        , xilinxRules
        ) where
 
@@ -13,7 +13,10 @@ import Text.Hastache.Context
 
 import Paths_kansas_lava_shake
 
+data XilinxTarget = XilinxTarget{ targetFamily, targetDevice, targetSpeed, targetPackage :: String }
+
 data XilinxConfig = XilinxConfig{ xilinxRoot :: FilePath
+                                , xilinxTarget :: XilinxTarget
                                 }
 
 xilinxRules :: XilinxConfig -> FilePath -> String -> [FilePath] -> [FilePath] -> Rules ()
@@ -33,10 +36,10 @@ xilinxRules XilinxConfig{..} outDir projName srcs ipcores = do
 
     projCtxt = mkStrContext $ \key -> case key of
         "project" -> MuVariable projName
-        "targetFamily" -> MuVariable "Spartan6"
-        "targetDevice" -> MuVariable "xc6slx9"
-        "targetSpeed" -> MuVariable "-2"
-        "targetPackage" -> MuVariable "tqg144"
+        "targetFamily" -> MuVariable targetFamily
+        "targetDevice" -> MuVariable targetDevice
+        "targetSpeed" -> MuVariable targetSpeed
+        "targetPackage" -> MuVariable targetPackage
         "ipcores" -> MuList [ mkStrContext $ \key -> case key of
                                    "name" -> MuVariable name
                                    _ -> MuNothing
@@ -49,6 +52,8 @@ xilinxRules XilinxConfig{..} outDir projName srcs ipcores = do
                          | src <- srcs
                          ]
         _ -> MuNothing
+      where
+        XilinxTarget{..} = xilinxTarget
 
 hastache :: MuContext IO -> FilePath -> Action ()
 hastache ctxt target = do
