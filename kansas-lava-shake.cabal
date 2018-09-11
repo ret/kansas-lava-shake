@@ -25,9 +25,10 @@ Library
   build-depends:
         base >=4.7 && < 5,
         kansas-lava >=0.2.4 && < 0.2.5,
-        shake >= 0.14,
+        shake >= 0.16,
         text,
-        hastache >= 0.6 && < 0.7
+        mustache,
+        vector
   default-language:    Haskell2010
   other-extensions:    RecordWildCards
   Ghc-Options:         -fwarn-unused-imports -fwarn-unused-matches
