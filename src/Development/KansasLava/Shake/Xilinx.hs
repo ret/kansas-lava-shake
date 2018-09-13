@@ -1,21 +1,22 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 module Development.KansasLava.Shake.Xilinx
        ( XilinxConfig(..), XilinxTarget(..)
        , xilinxRules
        ) where
 
-import Development.Shake
-import Development.Shake.FilePath
+import           Development.Shake          hiding ((~>))
+import           Development.Shake.FilePath
 
-import qualified Data.Text.Lazy as TL
-import Text.Hastache
-import Text.Hastache.Context
+import qualified Data.Text                  as T
+import           Text.Mustache
+import           Text.Mustache.Types
 
-import Paths_kansas_lava_shake
+import           Paths_kansas_lava_shake
 
 data XilinxTarget = XilinxTarget{ targetFamily, targetDevice, targetSpeed, targetPackage :: String }
 
-data XilinxConfig = XilinxConfig{ xilinxRoot :: FilePath
+data XilinxConfig = XilinxConfig{ xilinxRoot   :: FilePath
                                 , xilinxTarget :: XilinxTarget
                                 }
 
@@ -29,44 +30,36 @@ xilinxRules XilinxConfig{..} outDir projName srcs ipcores = do
 
         xilinx "xtclsh" [projName <.> "tcl", "rebuild_project"]
 
-    "build" </> "*.tcl" %> do
-        hastache projCtxt
+    outDir </> "*.tcl" %> do
+        mustache projCtxt
   where
     xilinx tool args = cmd (Cwd outDir) (xilinxRoot </> tool) args
 
-    projCtxt = mkStrContext $ \key -> case key of
-        "project" -> MuVariable projName
-        "targetFamily" -> MuVariable targetFamily
-        "targetDevice" -> MuVariable targetDevice
-        "targetSpeed" -> MuVariable targetSpeed
-        "targetPackage" -> MuVariable targetPackage
-        "ipcores" -> MuList [ mkStrContext $ \key -> case key of
-                                   "name" -> MuVariable name
-                                   _ -> MuNothing
-                            | xco <- ipcores
-                            , let name = dropExtension xco
-                            ]
-        "srcs" -> MuList [ mkStrContext $ \key -> case key of
-                                "fileName" -> MuVariable src
-                                _ -> MuNothing
-                         | src <- srcs
-                         ]
-        _ -> MuNothing
+    projCtxt = object $ [
+        "project" ~=  projName,
+        "targetFamily" ~= targetFamily,
+        "targetDevice" ~= targetDevice,
+        "targetSpeed" ~= targetSpeed,
+        "targetPackage" ~= targetPackage,
+        "ipcores" ~> (map (\n -> object ["name" ~> n]) $ map dropExtension ipcores),
+        "srcs" ~> (map (\s -> object ["fileName" ~> s]) srcs)
+        ]
       where
         XilinxTarget{..} = xilinxTarget
 
-hastache :: MuContext IO -> FilePath -> Action ()
-hastache ctxt target = do
+mustache :: Value -> FilePath -> Action ()
+mustache ctxt target = do
     alwaysRerun
-    templateFile <- liftIO $ getDataFileName ("ise.template" </> templateName)
-    t <- liftIO $ hastacheFile hastacheConfig templateFile ctxt
-    writeFileChanged target $ TL.unpack t
+    rSrc <- liftIO $ getDataFileName ("ise.template" </> templateName)
+    withTempDir $ \tempDir -> do
+      copyFileChanged rSrc (tempDir </> templateName)
+      tE <- liftIO $ automaticCompile [tempDir] templateName
+      case tE of
+        Left err ->
+          liftIO $ error $ "KansasLava.Shake.Xilinx - mustache template problem: " ++ show err
+        Right template -> do
+          let st = substitute template ctxt
+          writeFileChanged target $ T.unpack st
   where
-    hastacheConfig = MuConfig{ muEscapeFunc = emptyEscape
-                             , muTemplateFileDir = Nothing
-                             , muTemplateFileExt = Just "mustache"
-                             , muTemplateRead = const $ return Nothing
-                             }
-
     ext = drop 1 . takeExtension $ target
     templateName = ext <.> "mustache"
