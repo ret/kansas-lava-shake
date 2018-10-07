@@ -28,7 +28,6 @@ xilinxRules XilinxConfig{..} outDir projName srcs ipcores = do
                         , [ outDir </> "ipcore_dir" </> xco | xco <- ipcores ]
                         , [ outDir </> projName <.> "tcl" ]
                         ]
-
         xilinx "xtclsh" [projName <.> "tcl", "rebuild_project"]
 
     outDir </> "*.tcl" %> do
